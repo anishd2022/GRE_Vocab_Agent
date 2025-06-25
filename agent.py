@@ -3,6 +3,8 @@ import os
 import random
 import datetime
 import google.generativeai as genai
+from dotenv import load_dotenv
+load_dotenv()
 
 # --- File Names for our Databases ---
 WORD_BANK_FILE = 'gre_words.json'
@@ -62,20 +64,61 @@ INITIAL_WORDS = [
 
 class VocabAgent:
     def __init__(self):
-        """Initializes the agent by loading or creating the necessary data files and setting up Gemini."""
-        self.word_bank = self._load_json(WORD_BANK_FILE, INITIAL_WORDS)
-        self.users = self._load_json(USER_DATA_FILE, {})
+        """Initializes the agent by loading data files and setting up Gemini."""
+        self.word_bank = self._load_word_bank()
+        self.users = self._load_user_data()
         self.current_user = None
         self.user_progress = None
         self._setup_gemini()
 
+
+    def _load_word_bank(self):
+        """
+        Loads the essential word bank from gre_words.json.
+        If the file doesn't exist, the program cannot run.
+        """
+        try:
+            with open(WORD_BANK_FILE, 'r', encoding='utf-8') as f:
+                print(f"Successfully loaded word bank from '{WORD_BANK_FILE}'.")
+                return json.load(f)
+        except FileNotFoundError:
+            print(f"FATAL ERROR: The required data file '{WORD_BANK_FILE}' was not found.")
+            print("Please run the 'convert_csv_to_json.py' script first to create it.")
+            exit()  # Stop the program if the main data file is missing.
+        except json.JSONDecodeError:
+            print(f"FATAL ERROR: The file '{WORD_BANK_FILE}' is corrupted or not a valid JSON file.")
+            exit()
+    
+    
+    def _load_user_data(self):
+        """
+        Loads user data. If the file doesn't exist, creates an empty one.
+        This behavior is kept because new user files can be created on the fly.
+        """
+        if not os.path.exists(USER_DATA_FILE):
+            print(f"User data file '{USER_DATA_FILE}' not found. A new one will be created.")
+            with open(USER_DATA_FILE, 'w') as f:
+                json.dump({}, f) # Create an empty JSON object
+        
+        with open(USER_DATA_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+
+
     def _setup_gemini(self):
-        """Sets up the Gemini API with the API key from environment variables."""
+        """Sets up the Gemini API with the API key and enables JSON mode."""
         api_key = os.environ.get("GOOGLE_API_KEY")
         if not api_key:
             raise EnvironmentError("GOOGLE_API_KEY environment variable not set.")
         genai.configure(api_key=api_key)
-        self.model = genai.GenerativeModel('gemini-1.5-flash-latest')
+        
+        # This is the key change: we tell the model to always output JSON.
+        json_mode_config = genai.GenerationConfig(response_mime_type="application/json")
+        
+        self.model = genai.GenerativeModel(
+            'gemini-1.5-flash-latest',
+            generation_config=json_mode_config
+        )
+
 
     def _load_json(self, filename, default_data):
         """Loads a JSON file. If it doesn't exist, creates it with default data."""
@@ -86,10 +129,12 @@ class VocabAgent:
         with open(filename, 'r') as f:
             return json.load(f)
 
+
     def _save_users(self):
         """Saves the current state of user data to the file."""
         with open(USER_DATA_FILE, 'w') as f:
             json.dump(self.users, f, indent=4)
+
 
     def login_or_create_user(self):
         """Handles user login or creation of a new user profile."""
@@ -110,6 +155,7 @@ class VocabAgent:
             if word not in self.user_progress:
                 self.user_progress.setdefault(word, {"mastery_level": 0, "last_seen": None, "correct_streak": 0})
 
+
     def select_word_for_quiz(self):
         """
         The core 'intelligent' logic for selecting a word.
@@ -128,6 +174,7 @@ class VocabAgent:
 
         return random.choice(candidate_words) if candidate_words else None
 
+
     def generate_question(self, word):
         """Generates a multiple-choice question for a given word."""
         correct_definition = next((w['definition'] for w in self.word_bank if w['word'] == word), None)
@@ -145,27 +192,55 @@ class VocabAgent:
             "correct_answer": correct_definition
         }
 
+
     def get_example_sentences(self, word, num_sentences=3):
-        """Uses Gemini to generate example sentences for a given word."""
+        """
+        Uses Gemini to generate a structured JSON object of example sentences.
+        """
+        # 1. Create a highly specific prompt defining the desired JSON structure.
+        prompt = f"""
+        Generate exactly {num_sentences} diverse example sentences for the word '{word}'.
+        
+        Your output MUST be a valid JSON object.
+        The JSON object should have a single key, "examples", which is a list of strings.
+        
+        Example for the word 'happy':
+        {{
+        "examples": [
+            "She was happy to see her friends.",
+            "The happy dog wagged its tail.",
+            "This is a happy occasion."
+        ]
+        }}
+        """
+        
         try:
-            prompt = f"Generate {num_sentences} diverse example sentences using the word '{word}'."
             response = self.model.generate_content(prompt)
-            print(response)
-            if response.parts and hasattr(response.parts[-1], 'text'):
-                sentences = [part.text.strip() for part in response.parts if hasattr(part, 'text')]
-                # Split into individual sentences if the response is one long string
-                all_sentences = []
-                for s in sentences:
-                    all_sentences.extend(s.split('. '))
-                # Filter out empty strings and take the first num_sentences
-                valid_sentences = [s.strip() for s in all_sentences if s.strip()]
-                return valid_sentences[:num_sentences]
+            
+            # 2. Use a robust JSON parser with error handling.
+            # The response.text will be a raw JSON string.
+            data = json.loads(response.text)
+            
+            # 3. Safely extract the data from the parsed dictionary.
+            # The .get() method prevents errors if the key is missing.
+            sentences = data.get("examples", [])
+            
+            if isinstance(sentences, list) and sentences:
+                return sentences
             else:
-                print(f"Error generating examples for '{word}': No text in response.")
+                print(f"Error generating examples for '{word}': JSON was valid but the 'examples' key was missing or empty.")
                 return []
+
+        except json.JSONDecodeError as e:
+            # This catches errors if the model fails to return valid JSON.
+            print(f"Error parsing JSON response for '{word}': {e}")
+            print(f"Received text: {response.text}")
+            return []
         except Exception as e:
+            # This catches general API communication errors.
             print(f"Error communicating with Gemini for '{word}': {e}")
             return []
+
 
     def run_quiz(self, num_questions=5):
         """Runs a quiz session for the logged-in user."""
@@ -224,6 +299,9 @@ class VocabAgent:
         print(f"\nQuiz finished! Your score: {score}/{num_questions}")
         self._save_users()
         print("Your progress has been saved.")
+
+
+
 
 
 if __name__ == "__main__":
