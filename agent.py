@@ -3,6 +3,7 @@ import os
 import random
 import datetime
 import google.generativeai as genai
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -10,57 +11,6 @@ load_dotenv()
 WORD_BANK_FILE = 'gre_words.json'
 USER_DATA_FILE = 'users.json'
 
-# --- Initial GRE Word List (Can be greatly expanded) ---
-INITIAL_WORDS = [
-    {
-        "word": "Aberration",
-        "definition": "A departure from what is normal, usual, or expected, typically unwelcome.",
-        "example": "The single poor grade on his report card was an aberration.",
-        "difficulty": "uncommon"
-    },
-    {
-        "word": "Ephemeral",
-        "definition": "Lasting for a very short time.",
-        "example": "The beauty of the cherry blossoms is ephemeral.",
-        "difficulty": "common"
-    },
-    {
-        "word": "Garrulous",
-        "definition": "Excessively talkative, especially on trivial matters.",
-        "example": "He was so garrulous that he could barely let anyone else get a word in.",
-        "difficulty": "uncommon"
-    },
-    {
-        "word": "Pusillanimous",
-        "definition": "Showing a lack of courage or determination; timid.",
-        "example": "The pusillanimous leader was afraid to make any difficult decisions.",
-        "difficulty": "rare"
-    },
-    {
-        "word": "Laconic",
-        "definition": "Using very few words.",
-        "example": "His laconic reply suggested a lack of interest in the topic.",
-        "difficulty": "common"
-    },
-    {
-        "word": "Iconoclast",
-        "definition": "A person who attacks cherished beliefs or institutions.",
-        "example": "As an iconoclast, the artist was not afraid to mock the conventions of the art world.",
-        "difficulty": "uncommon"
-    },
-    {
-        "word": "Erudite",
-        "definition": "Having or showing great knowledge or learning.",
-        "example": "The erudite professor could answer any question on ancient history.",
-        "difficulty": "common"
-    },
-    {
-        "word": "Profligate",
-        "definition": "Recklessly extravagant or wasteful in the use of resources.",
-        "example": "The profligate monarch quickly depleted the kingdom's treasury.",
-        "difficulty": "rare"
-    }
-]
 
 class VocabAgent:
     def __init__(self):
@@ -156,23 +106,80 @@ class VocabAgent:
                 self.user_progress.setdefault(word, {"mastery_level": 0, "last_seen": None, "correct_streak": 0})
 
 
+    # Mastery Level -> Time until next review
+    SRS_INTERVALS = {
+        0: timedelta(minutes=0),   # Immediately available for review
+        1: timedelta(minutes=1),  # 20 minutes
+        2: timedelta(minutes=45),  # 45 minutes
+        3: timedelta(hours=2),     # 2 hours
+        4: timedelta(hours=12),    # 12 hours
+        5: timedelta(days=1),      # 1 day
+        6: timedelta(days=5),      # 5 days
+        7: timedelta(days=14),     # 2 weeks
+        8: timedelta(days=30)      # 1 month (approximated)
+    }
+    
     def select_word_for_quiz(self):
         """
-        The core 'intelligent' logic for selecting a word.
-        It prioritizes words with the lowest mastery level.
+        Selects a word using a Spaced Repetition System (SRS) algorithm.
+        This version includes print statements for debugging.
         """
-        min_mastery = float('inf')
+        now = datetime.now()
+        print("\n--- Running select_word_for_quiz ---")
+        print(f"Current Time (now): {now.isoformat()}")
+
+        due_words = []
+        new_words = []
+        future_review_words = []
+
+        # Limit the debug printout to a few words to avoid spamming the console
+        words_to_debug = ["proscribe", "abate", "laconic", "austere"] # Add any other words you're testing
+
         for word, stats in self.user_progress.items():
-            if stats.get('mastery_level', 0) < min_mastery:
-                min_mastery = stats.get('mastery_level', 0)
+            is_debug_word = word in words_to_debug
 
-        candidate_words = [word for word, stats in self.user_progress.items() if stats.get('mastery_level', 0) == min_mastery]
+            next_review_date_str = stats.get("next_review_date")
+            if not next_review_date_str:
+                new_words.append(word)
+                if is_debug_word:
+                    print(f"  - Word '{word}' is NEW.")
+                continue
 
-        if not candidate_words:
-            # If all words have some mastery, pick one to review (simplistic approach)
-            candidate_words = list(self.user_progress.keys())
+            next_review_date = datetime.fromisoformat(next_review_date_str)
 
-        return random.choice(candidate_words) if candidate_words else None
+            if is_debug_word:
+                print(f"  - Checking '{word}': Review date is {next_review_date.isoformat()}")
+
+            if next_review_date <= now:
+                due_words.append((word, next_review_date))
+                if is_debug_word:
+                    print(f"    -> RESULT: DUE (Review date is in the past)")
+            else:
+                future_review_words.append((word, next_review_date))
+                if is_debug_word:
+                    print(f"    -> RESULT: NOT DUE (Review date is in the future)")
+
+        print(f"Found {len(due_words)} due words, {len(new_words)} new words.")
+        
+        # --- The rest of the selection logic is the same ---
+        if due_words:
+            due_words.sort(key=lambda x: x[1])
+            print(f"--> Selecting from due words: '{due_words[0][0]}'")
+            return due_words[0][0]
+
+        if new_words:
+            selected_word = random.choice(new_words)
+            print(f"--> Selecting from new words: '{selected_word}'")
+            return selected_word
+
+        if future_review_words:
+            future_review_words.sort(key=lambda x: x[1])
+            print(f"--> No words are due. Selecting soonest future word: '{future_review_words[0][0]}'")
+            return future_review_words[0][0]
+
+        fallback_word = random.choice([w['word'] for w in self.word_bank])
+        print(f"--> Fallback: Selecting random word: '{fallback_word}'")
+        return fallback_word
 
 
     def generate_question(self, word):
@@ -243,7 +250,7 @@ class VocabAgent:
 
 
     def run_quiz(self, num_questions=5):
-        """Runs a quiz session for the logged-in user."""
+        """Runs a quiz session, with the correct SRS logic for updating progress."""
         if not self.current_user:
             print("No user is logged in.")
             return
@@ -253,7 +260,7 @@ class VocabAgent:
         for i in range(num_questions):
             word_to_test = self.select_word_for_quiz()
             if not word_to_test:
-                print("No words available in the word bank.")
+                print("No words available to quiz. The word bank might be empty.")
                 break
 
             question = self.generate_question(word_to_test)
@@ -270,28 +277,41 @@ class VocabAgent:
                 user_choice = int(input("Your answer (1-4): "))
                 user_answer = question['options'][user_choice - 1]
 
+                current_mastery = self.user_progress[word_to_test].get('mastery_level', 0)
+                
                 if user_answer == question['correct_answer']:
                     print("Correct! Great job.")
                     score += 1
-                    self.user_progress.setdefault(word_to_test, {"mastery_level": 0, "last_seen": None, "correct_streak": 0})
-                    self.user_progress.get(word_to_test)['mastery_level'] += 1
-                    self.user_progress.get(word_to_test)['correct_streak'] = self.user_progress.get(word_to_test, {}).get('correct_streak', 0) + 1
+                    
+                    new_mastery = min(current_mastery + 1, max(self.SRS_INTERVALS.keys()))
+                    self.user_progress[word_to_test]['mastery_level'] = new_mastery
+                    self.user_progress[word_to_test]['correct_streak'] += 1
+                    
                 else:
                     print(f"Not quite. The correct answer was: '{question['correct_answer']}'")
-                    self.user_progress.setdefault(word_to_test, {"mastery_level": 0, "last_seen": None, "correct_streak": 0})
-                    self.user_progress.get(word_to_test)['correct_streak'] = 0 # Reset streak
 
-                self.user_progress.setdefault(word_to_test, {"mastery_level": 0, "last_seen": None, "correct_streak": 0})
-                self.user_progress.get(word_to_test)['last_seen'] = datetime.datetime.now().isoformat()
+                    new_mastery = max(current_mastery - 1, 0)
+                    self.user_progress[word_to_test]['mastery_level'] = new_mastery
+                    self.user_progress[word_to_test]['correct_streak'] = 0
 
-                # Generate and display example sentences using Gemini
-                print("\n--- Example Sentences ---")
+                # --- THIS IS THE CRUCIAL LOGIC THAT WAS MISSING ---
+                # It calculates the next review date based on the new mastery level
+                interval = self.SRS_INTERVALS[new_mastery]
+                next_review_date = datetime.now() + interval
+                self.user_progress[word_to_test]['next_review_date'] = next_review_date.isoformat()
+                # --- END OF CRUCIAL LOGIC ---
+                
+                # Show original example sentence from our JSON file
+                original_example = next((w.get('example') for w in self.word_bank if w.get('word') == word_to_test), None)
+                if original_example:
+                    print(f"\nExample: {original_example}")
+                
+                # Try to get more examples from Gemini
                 example_sentences = self.get_example_sentences(word_to_test)
                 if example_sentences:
-                    for sentence in example_sentences:
-                        print(f"- {sentence}")
-                else:
-                    print("Could not retrieve example sentences.")
+                    print("\n--- More Examples ---")
+                    for ex in example_sentences:
+                        print(f"- {ex}")
 
             except (ValueError, IndexError):
                 print("Invalid input. Skipping question.")
