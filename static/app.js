@@ -20,11 +20,16 @@ const welcomeMessage = document.getElementById('welcome-message');
 const quizContainer = document.getElementById('quiz-container');
 const summaryContainer = document.getElementById('summary-container');
 const wordDisplay = document.getElementById('word-display');
-const reasonDisplay = document.getElementById('reason-display'); // <-- NEW DOM ELEMENT
 const optionsContainer = document.getElementById('options-container');
 const feedbackDiv = document.getElementById('feedback');
 const finalScoreDisplay = document.getElementById('final-score');
 const newQuizButton = document.getElementById('new-quiz-button');
+const nextQuestionButton = document.getElementById('next-question-button');
+const generateSentencesButton = document.getElementById('generate-sentences-button');
+const statsContainer = document.getElementById('stats-container');
+// --- NEW --- Get the sentences container element
+const sentencesContainer = document.getElementById('sentences-container');
+
 
 // --- EVENT LISTENERS ---
 loginButton.addEventListener('click', () => handleLogin('login'));
@@ -36,6 +41,10 @@ usernameInput.addEventListener('keyup', function(event) {
         loginButton.click();
     }
 });
+nextQuestionButton.addEventListener('click', fetchQuestion);
+// --- MODIFIED --- Event listener now calls the new Gemini API function
+generateSentencesButton.addEventListener('click', handleGenerateSentences);
+
 
 // --- LOGIN/LOGOUT LOGIC ---
 async function handleLogin(mode) {
@@ -44,7 +53,7 @@ async function handleLogin(mode) {
         loginError.textContent = 'Please enter a username.';
         return;
     }
-    loginError.textContent = '...';
+    loginError.textContent = '...'; 
 
     try {
         const response = await fetch('/api/login', {
@@ -88,9 +97,12 @@ function startQuiz() {
 }
 
 async function fetchQuestion() {
+    nextQuestionButton.style.display = 'none';
     feedbackDiv.innerHTML = '';
+    feedbackDiv.className = '';
     optionsContainer.innerHTML = '';
-    reasonDisplay.textContent = ''; // Clear previous reason
+    // --- NEW --- Clear the sentences from the previous question
+    sentencesContainer.innerHTML = ''; 
     wordDisplay.textContent = `Loading question ${questionsAnswered + 1} of ${QUIZ_LENGTH}...`;
 
     try {
@@ -104,7 +116,6 @@ async function fetchQuestion() {
         currentCorrectAnswer = question.correct_answer;
         
         wordDisplay.textContent = question.word;
-        reasonDisplay.textContent = question.reason; // <-- UPDATE THE REASON DISPLAY
 
         question.options.forEach(option => {
             const button = document.createElement('button');
@@ -145,9 +156,9 @@ async function submitAnswer(chosenAnswer) {
     await updateStatsDashboard();
     
     if (questionsAnswered < QUIZ_LENGTH) {
-        setTimeout(fetchQuestion, 2000);
+        nextQuestionButton.style.display = 'inline-block';
     } else {
-        setTimeout(showQuizSummary, 2000);
+        setTimeout(showQuizSummary, 1500);
     }
 }
 
@@ -158,28 +169,60 @@ function showQuizSummary() {
 }
 
 async function updateStatsDashboard() {
-    const statsGrid = document.getElementById('stats-grid');
-    statsGrid.innerHTML = 'Loading stats...';
+    statsContainer.innerHTML = 'Loading stats...';
     try {
         const response = await fetch(`/api/stats?user=${currentUsername}`);
         const stats = await response.json();
 
-        statsGrid.innerHTML = `
-            <div>Unseen</div><div>${stats.unseen || 0}</div>
-            <div>Level 0</div><div>${stats.level_0 || 0}</div>
-            <div>Level 1</div><div>${stats.level_1 || 0}</div>
-            <div>Level 2</div><div>${stats.level_2 || 0}</div>
-            <div>Level 3</div><div>${stats.level_3 || 0}</div>
-        `;
-        let level4plus = 0;
-        for (const key in stats) {
-            if (key.startsWith('level_') && parseInt(key.split('_')[1]) >= 4) {
-                level4plus += stats[key];
-            }
+        statsContainer.innerHTML = '';
+        const unseenCount = stats.unseen || 0;
+        statsContainer.innerHTML += `<p>Unseen Words: ${unseenCount}</p>`;
+        for(let i=0; i<9; i++) {
+             const levelKey = `level_${i}`;
+             const count = stats[levelKey] || 0;
+             if(count > 0) {
+                statsContainer.innerHTML += `<p>Mastery Level ${i}: ${count}</p>`;
+             }
         }
-        statsGrid.innerHTML += `<div>Level 4+</div><div>${level4plus}</div>`;
+    } catch (error) {
+        statsContainer.innerHTML = 'Could not load stats.';
+        console.error("Failed to update stats dashboard:", error);
+    }
+}
+
+
+// --- NEW --- Function to call Gemini API and display sentences
+async function handleGenerateSentences() {
+    const word = wordDisplay.textContent;
+    // ... (show loading message) ...
+
+    try {
+        // 1. Call YOUR OWN backend, not Google's API directly.
+        const response = await fetch('/api/generate-sentences', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            // 2. Send the word to your server.
+            body: JSON.stringify({ word: word })
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Display errors that came from your server
+            throw new Error(data.error || 'An unknown error occurred.');
+        }
+
+        // 3. Display the sentences received from your server.
+        const sentences = data.examples;
+        if (sentences && sentences.length > 0) {
+            sentencesContainer.innerHTML = '<ul>' + sentences.map(s => `<li>${s}</li>`).join('') + '</ul>';
+        } else {
+            throw new Error("Received an empty list of examples from the server.");
+        }
 
     } catch (error) {
-        statsGrid.innerHTML = 'Could not load stats.';
+        // ... (handle and display errors) ...
+    } finally {
+        // ... (re-enable button) ...
     }
 }

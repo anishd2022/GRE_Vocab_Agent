@@ -10,37 +10,54 @@
         
         /* Login View Styles */
         #login-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
-        #login-container h1 { color: #333; }
         #login-container input { width: 80%; max-width: 300px; padding: 12px; margin-bottom: 20px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
         #login-container .button-group button { font-size: 16px; padding: 10px 20px; margin: 0 10px; cursor: pointer; border: 1px solid #007bff; background-color: #007bff; color: white; border-radius: 4px; transition: background-color 0.2s; }
-        #login-container .button-group button:hover { background-color: #0056b3; }
-        #login-error { color: #721c24; min-height: 20px; margin-top: 15px; font-weight: bold; }
+        #login-error { color: #dc3545; min-height: 20px; margin-top: 15px; font-weight: bold; }
 
         /* App View Styles */
-        .main-container { display: flex; justify-content: center; gap: 40px; }
-        .quiz-panel, .stats-panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .main-container { display: flex; justify-content: center; align-items: flex-start; gap: 40px; }
+        .quiz-panel, .stats-panel { background: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .quiz-panel { flex-basis: 600px; }
-        .stats-panel { flex-basis: 300px; height: fit-content;}
+        .stats-panel { flex-basis: 300px; flex-shrink: 0; }
         #app-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
         #welcome-message { font-weight: bold; color: #555; }
         #logout-button { cursor: pointer; background: none; border: none; color: #007bff; text-decoration: underline; font-size: 14px; }
         
-        /* Shared Styles */
-        h1, h2 { text-align: center; color: #333; }
-        #word-display { font-size: 2.5em; margin-bottom: 10px;}
-        #reason-display { text-align: center; font-style: italic; color: #666; font-size: 0.9em; min-height: 1.2em; }
+        /* Quiz Styles */
+        #word-display { font-size: 2.5em; margin-bottom: 10px; text-align: center; color: #333; }
         #options-container button { display: block; width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background-color: #fff; transition: background-color 0.2s; }
-        #options-container button:hover { background-color: #f0f0f0; }
-        #options-container button:disabled { cursor: not-allowed; background-color: #e9ecef; }
-        #feedback { margin-top: 15px; padding: 10px; border-radius: 5px; min-height: 24px; text-align: center; font-weight: bold;}
-        #summary-container { text-align: center; }
-        #new-quiz-button { font-size: 18px; padding: 10px 20px; cursor: pointer; border: 1px solid #28a745; background-color: #28a745; color: white; border-radius: 4px; }
-        .stats-grid { display: grid; grid-template-columns: 1fr auto; gap: 10px 20px; }
-        .stats-grid div { padding: 8px; border-radius: 4px; }
-        .stats-grid div:nth-child(odd) { font-weight: bold; text-align: left;}
-        .stats-grid div:nth-child(even) { background-color: #e9ecef; text-align: center; font-weight: bold; }
+        #feedback { margin-top: 15px; padding: 10px; border-radius: 5px; min-height: 24px; text-align: center; font-weight: bold; }
+        #controls-container { margin-top: 20px; text-align: center; }
+        #controls-container button { margin: 0 10px; padding: 10px 15px; font-size: 14px; cursor: pointer; }
         .correct { background-color: #d4edda; color: #155724; }
         .incorrect { background-color: #f8d7da; color: #721c24; }
+
+        /* --- NEW --- Styles for the sentences container */
+        #sentences-container {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 5px;
+            border: 1px solid #e9ecef;
+            min-height: 50px; /* So it doesn't collapse when empty */
+            transition: all 0.3s ease;
+        }
+        #sentences-container ul {
+            list-style-type: disc;
+            padding-left: 20px;
+            margin: 0;
+            text-align: left;
+        }
+        #sentences-container li {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            color: #495057;
+        }
+        #sentences-container p {
+            text-align: center;
+            color: #6c757d;
+            margin: 0;
+        }
     </style>
 </head>
 <body>
@@ -63,11 +80,17 @@
             </div>
             <div class="main-container">
                 <div class="quiz-panel">
+                    <h1>GRE Vocab Quiz</h1>
                     <div id="quiz-container">
                         <h2 id="word-display">Loading...</h2>
-                        <p id="reason-display"></p>
                         <div id="options-container"></div>
                         <div id="feedback"></div>
+                        <div id="controls-container" style="margin-top: 20px; text-align: center;">
+                            <button id="generate-sentences-button">Generate Example Sentences</button>
+                            <button id="next-question-button" style="display: none;">Next Question</button>
+                        </div>
+                        <!-- --- NEW --- Container to display generated sentences -->
+                        <div id="sentences-container"></div>
                     </div>
                     <div id="summary-container" style="display: none;">
                         <h2>Quiz Complete!</h2>
@@ -77,8 +100,8 @@
                 </div>
                 <div class="stats-panel">
                     <h2>Your Progress</h2>
-                    <div id="stats-grid">
-                        </div>
+                    <div id="stats-container">
+                    </div>
                 </div>
             </div>
         </div>
