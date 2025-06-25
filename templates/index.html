@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GRE Vocab Agent</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; }
+        .main-container { display: flex; justify-content: center; gap: 40px; padding: 20px; }
+        .quiz-panel { flex-basis: 600px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .stats-panel { flex-basis: 300px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        h1, h2 { text-align: center; }
+        #options-container button { display: block; width: 100%; padding: 10px; margin: 5px 0; font-size: 16px; cursor: pointer; }
+        #feedback { margin-top: 15px; padding: 10px; border-radius: 5px; min-height: 24px; text-align: center;}
+        #reason-display { text-align: center; font-style: italic; color: #666; font-size: 0.9em; }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .stats-grid div { background-color: #e9ecef; padding: 8px; border-radius: 4px; text-align: center; }
+        .correct { background-color: #d4edda; color: #155724; }
+        .incorrect { background-color: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <div class="main-container">
+        <div class="quiz-panel">
+            <h1>GRE Vocab Quiz</h1>
+            <div id="quiz-container">
+                <h2 id="word-display">Loading...</h2>
+                <p id="reason-display"></p>
+                <div id="options-container"></div>
+                <div id="feedback"></div>
+            </div>
+            <div id="summary-container" style="display: none;">
+                <h2>Quiz Complete!</h2>
+                <h3 id="final-score"></h3>
+                <button id="new-quiz-button">Start New Quiz</button>
+            </div>
+        </div>
+
+        <div class="stats-panel">
+            <h2>Your Progress</h2>
+            <div id="stats-grid" class="stats-grid">
+                <div>Unseen</div><div id="stats-unseen">...</div>
+                <div>Level 0</div><div id="stats-level_0">...</div>
+                <div>Level 1</div><div id="stats-level_1">...</div>
+                <div>Level 2</div><div id="stats-level_2">...</div>
+                <div>Level 3</div><div id="stats-level_3">...</div>
+                <div>Level 4+</div><div id="stats-level_4_plus">...</div>
+            </div>
+        </div>
+    </div>
+    <script src="/static/app.js"></script>
+</body>
+</html>
