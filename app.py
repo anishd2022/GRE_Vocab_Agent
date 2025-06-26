@@ -10,7 +10,7 @@ from flask_cors import CORS
 
 # Load environment variables from .env file
 load_dotenv()
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.', static_folder='.', static_url_path='')
 CORS(app)
 
 # --- Configure Gemini API ---
