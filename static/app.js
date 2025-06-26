@@ -6,6 +6,7 @@ let currentCorrectAnswer = null;
 let score = 0;
 let questionsAnswered = 0;
 const QUIZ_LENGTH = 5;
+const API_BASE_URL = 'https://gre-vocab-backend-apjd.onrender.com/'
 
 // --- DOM ELEMENTS ---
 const loginContainer = document.getElementById('login-container');
@@ -79,7 +80,7 @@ async function handleLogin(mode) {
     loginError.textContent = '...'; 
 
     try {
-        const response = await fetch('/api/login', {
+        const response = await fetch(`${API_BASE_URL}/api/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ username, mode }),
@@ -130,7 +131,7 @@ async function fetchQuestion() {
     wordDisplay.textContent = `Loading question ${questionsAnswered + 1} of ${QUIZ_LENGTH}...`;
 
     try {
-        const response = await fetch(`/api/question?user=${currentUsername}`);
+        const response = await fetch(`${API_BASE_URL}/api/question?user=${currentUsername}`);
         if (!response.ok) throw new Error('Failed to fetch question.');
         
         const question = await response.json();
@@ -167,7 +168,7 @@ async function submitAnswer(chosenAnswer) {
         feedbackDiv.className = 'incorrect';
     }
     
-    await fetch('/api/answer', {
+    await fetch(`${API_BASE_URL}/api/answer`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -240,7 +241,7 @@ async function handleGenerateSentences() {
 
     try {
         // 1. Call YOUR OWN backend, not Google's API directly.
-        const response = await fetch('/api/generate-sentences', {
+        const response = await fetch(`${API_BASE_URL}/api/generate-sentances`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             // 2. Send the word to your server.
