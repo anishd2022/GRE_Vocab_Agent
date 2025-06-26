@@ -241,7 +241,7 @@ async function handleGenerateSentences() {
 
     try {
         // 1. Call YOUR OWN backend, not Google's API directly.
-        const response = await fetch(`${API_BASE_URL}/api/generate-sentances`, {
+        const response = await fetch(`${API_BASE_URL}/api/generate-sentences`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             // 2. Send the word to your server.
