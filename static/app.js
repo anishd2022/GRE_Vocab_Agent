@@ -9,14 +9,19 @@ const QUIZ_LENGTH = 5;
 
 // --- DOM ELEMENTS ---
 const loginContainer = document.getElementById('login-container');
-const appContainer = document.getElementById('app-container');
 const usernameInput = document.getElementById('username-input');
 const loginButton = document.getElementById('login-button');
 const registerButton = document.getElementById('register-button');
 const loginError = document.getElementById('login-error');
+
+// Get references to the mode selection container and its buttons
+const modeSelectionContainer = document.getElementById('mode-selection-container');
+const guessDefinitionButton = document.getElementById('guess-definition-button');
+const fillBlankButton = document.getElementById('fill-blank-button');
+
+const appContainer = document.getElementById('app-container');
 const logoutButton = document.getElementById('logout-button');
 const welcomeMessage = document.getElementById('welcome-message');
-
 const quizContainer = document.getElementById('quiz-container');
 const summaryContainer = document.getElementById('summary-container');
 const wordDisplay = document.getElementById('word-display');
@@ -26,24 +31,42 @@ const finalScoreDisplay = document.getElementById('final-score');
 const newQuizButton = document.getElementById('new-quiz-button');
 const nextQuestionButton = document.getElementById('next-question-button');
 const generateSentencesButton = document.getElementById('generate-sentences-button');
-const statsContainer = document.getElementById('stats-container');
-// --- NEW --- Get the sentences container element
 const sentencesContainer = document.getElementById('sentences-container');
-
+const statsContainer = document.getElementById('stats-container');
 
 // --- EVENT LISTENERS ---
 loginButton.addEventListener('click', () => handleLogin('login'));
 registerButton.addEventListener('click', () => handleLogin('register'));
 logoutButton.addEventListener('click', handleLogout);
-newQuizButton.addEventListener('click', startQuiz);
+newQuizButton.addEventListener('click', () => {
+    // When a new quiz is started from the summary, go back to mode selection
+    summaryContainer.style.display = 'none';
+    modeSelectionContainer.style.display = 'block';
+});
 usernameInput.addEventListener('keyup', function(event) {
     if (event.key === "Enter") {
         loginButton.click();
     }
 });
 nextQuestionButton.addEventListener('click', fetchQuestion);
-// --- MODIFIED --- Event listener now calls the new Gemini API function
 generateSentencesButton.addEventListener('click', handleGenerateSentences);
+
+// Event listeners for the new mode selection buttons
+guessDefinitionButton.addEventListener('click', () => {
+    // This is the trigger to start the main quiz.
+    // Hide mode selection and show the main app container.
+    modeSelectionContainer.style.display = 'none';
+    appContainer.style.display = 'block';
+    // Start the "Guess the Definition" quiz.
+    startQuiz();
+});
+
+fillBlankButton.addEventListener('click', () => {
+    // As requested, this button does nothing for now, as the feature isn't built.
+    // Using console.log instead of alert for a less intrusive message.
+    console.log('"Fill in the Blank" mode is not yet implemented.');
+    alert('"Fill in the Blank" mode is coming soon!');
+});
 
 
 // --- LOGIN/LOGOUT LOGIC ---
@@ -65,10 +88,11 @@ async function handleLogin(mode) {
 
         if (response.ok) {
             currentUsername = username;
+            // On successful login, hide the login screen and show the mode selection screen.
             loginContainer.style.display = 'none';
-            appContainer.style.display = 'block';
+            modeSelectionContainer.style.display = 'block'; 
             welcomeMessage.textContent = `Welcome, ${currentUsername}!`;
-            startQuiz();
+            // The quiz no longer starts automatically. It waits for the user to select a mode.
         } else {
             loginError.textContent = data.error || 'An unknown error occurred.';
         }

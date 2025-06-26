@@ -66,7 +66,7 @@ def generate_sentences_proxy():
     num_sentences = 3
     
     prompt = f"""
-    Generate exactly {num_sentences} diverse example sentences for the word '{word}'.
+    Generate exactly {num_sentences} diverse unique example sentences for the word '{word}'. 
     Your output MUST be a valid JSON object.
     The JSON object should have a single key, "examples", which is a list of strings.
     Example for the word 'happy':
