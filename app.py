@@ -179,7 +179,7 @@ def get_quiz_question():
                 END as priority, up.next_review_date
             FROM words w
             LEFT JOIN user_progress up ON w.id = up.word_id AND up.user_id = %s
-            ORDER BY priority ASC, up.next_review_date ASC
+            ORDER BY priority ASC, RAND()
             LIMIT 1;
         """
         cursor.execute(query, (user_id,))
