@@ -198,18 +198,36 @@ async function updateStatsDashboard() {
         const response = await fetch(`/api/stats?user=${currentUsername}`);
         const stats = await response.json();
 
+        // Clear the container before adding new stats
         statsContainer.innerHTML = '';
+
+        // Create and append the "Unseen Words" stat item
         const unseenCount = stats.unseen || 0;
-        statsContainer.innerHTML += `<p>Unseen Words: ${unseenCount}</p>`;
-        for(let i=0; i<9; i++) {
+        if (unseenCount > 0) {
+            // Creates a styled div for "Unseen"
+            statsContainer.innerHTML += `
+                <div class="stat-item unseen-stat">
+                    <span>Unseen Words</span>
+                    <span class="stat-count">${unseenCount}</span>
+                </div>`;
+        }
+        
+        // Create and append items for each mastery level that has words
+        for (let i = 0; i < 9; i++) {
              const levelKey = `level_${i}`;
              const count = stats[levelKey] || 0;
-             if(count > 0) {
-                statsContainer.innerHTML += `<p>Mastery Level ${i}: ${count}</p>`;
+             if (count > 0) {
+                // Creates a styled div with a specific pastel color class (e.g., "mastery-3")
+                statsContainer.innerHTML += `
+                    <div class="stat-item mastery-${i}">
+                        <span>Mastery Level ${i}</span>
+                        <span class="stat-count">${count}</span>
+                    </div>`;
              }
         }
+
     } catch (error) {
-        statsContainer.innerHTML = 'Could not load stats.';
+        statsContainer.innerHTML = '<p>Could not load stats.</p>';
         console.error("Failed to update stats dashboard:", error);
     }
 }

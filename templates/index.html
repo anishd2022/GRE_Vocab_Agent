@@ -8,13 +8,13 @@
         body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"; background-color: #f4f4f9; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; }
         .container { width: 100%; max-width: 1000px; padding: 20px; }
         
-        /* Login View Styles */
-        #login-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
+        /* Login and Mode Selection Styles */
+        #login-container, #mode-selection-container { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); text-align: center; }
         #login-container input { width: 80%; max-width: 300px; padding: 12px; margin-bottom: 20px; font-size: 16px; border: 1px solid #ccc; border-radius: 4px; }
-        #login-container .button-group button { font-size: 16px; padding: 10px 20px; margin: 0 10px; cursor: pointer; border: 1px solid #007bff; background-color: #007bff; color: white; border-radius: 4px; transition: background-color 0.2s; }
+        #login-container .button-group button, #mode-selection-container button { font-size: 16px; padding: 10px 20px; margin: 0 10px; cursor: pointer; border: 1px solid #007bff; background-color: #007bff; color: white; border-radius: 4px; transition: background-color 0.2s; }
         #login-error { color: #dc3545; min-height: 20px; margin-top: 15px; font-weight: bold; }
 
-        /* App View Styles */
+        /* Main App Styles */
         .main-container { display: flex; justify-content: center; align-items: flex-start; gap: 40px; }
         .quiz-panel, .stats-panel { background: white; padding: 20px 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .quiz-panel { flex-basis: 600px; }
@@ -31,33 +31,49 @@
         #controls-container button { margin: 0 10px; padding: 10px 15px; font-size: 14px; cursor: pointer; }
         .correct { background-color: #d4edda; color: #155724; }
         .incorrect { background-color: #f8d7da; color: #721c24; }
+        #sentences-container { margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 5px; border: 1px solid #e9ecef; min-height: 50px; }
+        #sentences-container ul { list-style-type: disc; padding-left: 20px; margin: 0; text-align: left; }
+        #sentences-container li { margin-bottom: 8px; line-height: 1.5; color: #495057; }
+        #sentences-container p { text-align: center; color: #6c757d; margin: 0; }
 
-        /* --- NEW --- Styles for the sentences container */
-        #sentences-container {
-            margin-top: 20px;
-            padding: 15px;
-            background-color: #f8f9fa;
-            border-radius: 5px;
-            border: 1px solid #e9ecef;
-            min-height: 50px; /* So it doesn't collapse when empty */
-            transition: all 0.3s ease;
+        /* --- NEW --- Styles for the Progress Stats Panel --- */
+        #stats-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px; /* Adds space between the stat items */
         }
-        #sentences-container ul {
-            list-style-type: disc;
-            padding-left: 20px;
-            margin: 0;
-            text-align: left;
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: transform 0.2s ease;
         }
-        #sentences-container li {
-            margin-bottom: 8px;
-            line-height: 1.5;
-            color: #495057;
+        .stat-item:hover {
+            transform: scale(1.03); /* Slight zoom effect on hover */
         }
-        #sentences-container p {
-            text-align: center;
-            color: #6c757d;
-            margin: 0;
+        .stat-count {
+            font-weight: bold;
+            font-size: 1.1em;
+            padding: 3px 8px;
+            border-radius: 4px;
+            background-color: rgba(0, 0, 0, 0.08);
         }
+
+        /* Pastel Color Palette */
+        .unseen-stat { background-color: #e9ecef; color: #495057; }
+        .mastery-0 { background-color: #ffadad; color: #9d2424; } /* Pastel Red */
+        .mastery-1 { background-color: #ffd6a5; color: #a26815; } /* Pastel Orange */
+        .mastery-2 { background-color: #fdffb6; color: #8a8c2e; } /* Pastel Yellow */
+        .mastery-3 { background-color: #caffbf; color: #438234; } /* Pastel Green */
+        .mastery-4 { background-color: #9bf6ff; color: #167d89; } /* Pastel Cyan */
+        .mastery-5 { background-color: #a0c4ff; color: #214ca2; } /* Pastel Blue */
+        .mastery-6 { background-color: #bdb2ff; color: #3c328b; } /* Pastel Purple */
+        .mastery-7 { background-color: #ffc6ff; color: #913a91; } /* Pastel Magenta */
+        .mastery-8 { background-color: #f1f1f1; border: 1px solid #ccc; color: #333; } /* Mastered - Light Grey */
+        /* --- END OF NEW STYLES --- */
     </style>
 </head>
 <body>
@@ -75,10 +91,10 @@
 
         <div id="mode-selection-container" style="display: none; text-align: center; background: white; padding: 40px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
             <h2>Select a Quiz Mode</h2>
-            <button id="guess-definition-button" style="margin: 10px; padding: 12px 20px;">Guess the Definition</button>
-            <button id="fill-blank-button" style="margin: 10px; padding: 12px 20px;">Fill in the Blank</button>
+            <button id="guess-definition-button">Guess the Definition</button>
+            <button id="fill-blank-button">Fill in the Blank</button>
         </div>
-        
+
         <div id="app-container" style="display: none;">
             <div id="app-header">
                 <span id="welcome-message"></span>
@@ -95,7 +111,6 @@
                             <button id="generate-sentences-button">Generate Example Sentences</button>
                             <button id="next-question-button" style="display: none;">Next Question</button>
                         </div>
-                        <!-- --- NEW --- Container to display generated sentences -->
                         <div id="sentences-container"></div>
                     </div>
                     <div id="summary-container" style="display: none;">
