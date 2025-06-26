@@ -297,5 +297,15 @@ def submit_answer():
             cursor.close()
             conn.close()
 
+@app.route("/health")
+def health_check():
+    """
+    A simple endpoint that the cron job can hit to keep the server alive.
+    """
+    return jsonify({"status": "healthy"}), 200
+
+
+
+
 if __name__ == '__main__':
     app.run(debug=True)
