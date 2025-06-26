@@ -6,10 +6,12 @@ import mysql.connector
 from datetime import datetime, timedelta, timezone
 import random
 import google.generativeai as genai
+from flask_cors import CORS
 
 # Load environment variables from .env file
 load_dotenv()
 app = Flask(__name__)
+CORS(app)
 
 # --- Configure Gemini API ---
 try:
