@@ -94,6 +94,74 @@ def generate_sentences_proxy():
         print(f"Error communicating with Gemini: {e}")
         return jsonify({"error": "An error occurred while generating sentences."}), 500
 
+
+@app.route("/api/fill-in-the-blank-question")
+def get_fill_in_the_blank_question():
+    """
+    Generates a fill-in-the-blank question using a random word and the Gemini API.
+    """
+    if model is None:
+        return jsonify({"error": "Gemini API is not configured on the server."}), 503
+
+    conn = get_db_connection()
+    if conn is None:
+        return jsonify({"error": "Database connection failed"}), 500
+    
+    cursor = conn.cursor(dictionary=True)
+
+    try:
+        # Step 1: Get a random word from the database to be the correct answer.
+        cursor.execute("SELECT word FROM words ORDER BY RAND() LIMIT 1")
+        correct_word_row = cursor.fetchone()
+        if not correct_word_row:
+            return jsonify({"error": "No words found in the database."}), 404
+        correct_word = correct_word_row['word']
+
+        # Step 2: Create a specific prompt for Gemini to generate a sentence
+        # where the word is replaced by '_____'.
+        prompt = f"""
+        Create a single, clear sentence using the word '{correct_word}' that strongly implies its meaning.
+        Then, replace the word '{correct_word}' with '_____' (a blank space of 5 underscores).
+        Your output MUST be a valid JSON object with a single key, "sentence".
+
+        Example for the word 'ephemeral':
+        {{
+            "sentence": "The beauty of the cherry blossoms is _____, lasting only for a few days each spring."
+        }}
+        """
+        response = model.generate_content(prompt)
+        gemini_data = json.loads(response.text)
+        sentence = gemini_data.get("sentence")
+
+        if not sentence:
+            return jsonify({"error": "Failed to generate sentence from AI model."}), 500
+
+        # Step 3: Get 3 other random words to use as distractor options.
+        cursor.execute("SELECT word FROM words WHERE word != %s ORDER BY RAND() LIMIT 3", (correct_word,))
+        distractors = [row['word'] for row in cursor.fetchall()]
+        
+        # Step 4: Combine the correct answer with the distractors and shuffle them.
+        options = distractors + [correct_word]
+        random.shuffle(options)
+        
+        # Step 5: Assemble the final question object to send to the frontend.
+        question = {
+            "sentence": sentence,
+            "options": options,
+            "correct_answer": correct_word
+        }
+        
+        return jsonify(question)
+
+    except Exception as e:
+        print(f"Error in get_fill_in_the_blank_question: {e}")
+        return jsonify({"error": str(e)}), 500
+    finally:
+        if conn and conn.is_connected():
+            cursor.close()
+            conn.close()
+
+
 @app.route("/api/login", methods=['POST'])
 def handle_login():
     data = request.get_json()

@@ -89,6 +89,18 @@
         .mastery-7 { background-color: #ffc6ff; color: #913a91; } /* Pastel Magenta */
         .mastery-8 { background-color: #f1f1f1; border: 1px solid #ccc; color: #333; } /* Mastered - Light Grey */
         /* --- END OF NEW STYLES --- */
+
+        /* Styles for the "Fill in the Blank" Sentence */
+        #fib-sentence-display {
+            font-size: 1.4em;
+            line-height: 1.6;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #333;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
     </style>
 </head>
 <body>
@@ -141,6 +153,30 @@
                 </div>
             </div>
         </div>
+
+        <!-- --- NEW --- "Fill in the Blank" App Screen -->
+        <div id="fill-in-blank-container" style="display: none;">
+            <div id="app-header-fib">
+               <span id="welcome-message-fib"></span>
+               <button id="logout-button-fib">Logout</button>
+           </div>
+           <div class="quiz-panel" style="margin: 20px auto;">
+               <h1>Fill in the Blank</h1>
+               <div id="fib-quiz-container">
+                   <p id="fib-sentence-display">Loading sentence...</p>
+                   <div id="fib-options-container"></div>
+                   <div id="fib-feedback"></div>
+                   <div id="fib-controls-container">
+                       <button id="fib-next-question-button" style="display: none;">Next Question</button>
+                   </div>
+               </div>
+               <div id="fib-summary-container" style="display: none;">
+                   <h2>Quiz Complete!</h2>
+                   <h3 id="fib-final-score"></h3>
+                   <button id="fib-new-quiz-button" class="button-style">Take Another Quiz</button>
+               </div>
+           </div>
+       </div>
     </div>
     <script src="app.js"></script>
 </body>
