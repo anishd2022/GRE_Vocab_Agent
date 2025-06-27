@@ -120,15 +120,29 @@ def get_fill_in_the_blank_question():
         # Step 2: Create a specific prompt for Gemini to generate a sentence
         # where the word is replaced by '_____'.
         prompt = f"""
-        Create a single, clear sentence using the word '{correct_word}' that strongly implies its meaning.
-        Then, replace the word '{correct_word}' with '_____' (a blank space of 5 underscores).
-        Your output MUST be a valid JSON object with a single key, "sentence".
+Your task is to create a fill-in-the-blank sentence quiz question.
 
-        Example for the word 'ephemeral':
-        {{
-            "sentence": "The beauty of the cherry blossoms is _____, lasting only for a few days each spring."
-        }}
-        """
+**Follow these steps precisely:**
+
+1.  **Analyze the Word:** The word to create a sentence for is: **'{correct_word}'**.
+2.  **Create a Contextual Sentence:** First, write a clear, high-quality sentence that uses the word '{correct_word}' in a way that its meaning can be understood from the context.
+3.  **Replace the Word:** In the sentence you just created, you MUST replace the exact word '{correct_word}' with the placeholder '_____' (five underscores). Do not include the original word in the final sentence.
+4.  **Format the Output:** Your final output MUST be a single, valid JSON object. This object must contain one key, "sentence", whose value is the sentence with the '_____' placeholder.
+
+**Example Task:**
+* Word: 'ephemeral'
+* Sentence created in step 2: "The beauty of the cherry blossoms is ephemeral, lasting only for a few days each spring."
+* Sentence after step 3: "The beauty of the cherry blossoms is _____, lasting only for a few days each spring."
+
+**Final JSON Output for the example:**
+```json
+{{
+    "sentence": "The beauty of the cherry blossoms is _____, lasting only for a few days each spring."
+}}
+```
+
+**Now, perform the task for the word: '{correct_word}'**
+"""
         response = model.generate_content(prompt)
         gemini_data = json.loads(response.text)
         sentence = gemini_data.get("sentence")
