@@ -40,7 +40,7 @@
         
         /* Quiz Styles */
         #word-display { font-size: 2.5em; margin-bottom: 10px; text-align: center; color: #333; }
-        #options-container button { display: block; width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background-color: #fff; transition: background-color 0.2s; }
+        #options-container button, #fib-options-container button { display: block; width: 100%; padding: 12px; margin: 8px 0; font-size: 16px; cursor: pointer; border: 1px solid #ccc; border-radius: 4px; background-color: #fff; transition: background-color 0.2s; }
         #feedback { margin-top: 15px; padding: 10px; border-radius: 5px; min-height: 24px; text-align: center; font-weight: bold; }
         #controls-container { margin-top: 20px; text-align: center; }
         #controls-container button { margin: 0 10px; padding: 10px 15px; font-size: 14px; cursor: pointer; }
@@ -166,7 +166,7 @@
                    <p id="fib-sentence-display">Loading sentence...</p>
                    <div id="fib-options-container"></div>
                    <div id="fib-feedback"></div>
-                   <div id="fib-controls-container">
+                   <div id="fib-controls-container" style="margin-top: 20px; text-align: center;">
                        <button id="fib-next-question-button" style="display: none;">Next Question</button>
                    </div>
                </div>
