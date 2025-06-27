@@ -3,7 +3,7 @@
 An intelligent web application designed to help users master GRE vocabulary using a scientifically-backed Spaced Repetition System (SRS). This tool provides an interactive quiz experience, tracks user progress, and leverages the Google Gemini API to generate dynamic example sentences, providing crucial context for each word.
 
 **🌐 [Live Demo](https://gre-vocab-backend-apjd.onrender.com/)**  
-*(Also embedded in a personal portfolio website)*
+*(Also embedded in a personal portfolio website [anishdeshpande.com](https://anishdeshpande.com/))*
 
 ---
 
