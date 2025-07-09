@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 import random
 import google.generativeai as genai
 from flask_cors import CORS
+from mcp.server.fastmcp import FastMCP
 
 # Load environment variables from .env file
 load_dotenv()
